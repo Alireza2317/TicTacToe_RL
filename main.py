@@ -27,6 +27,10 @@ class TicTacToeGame:
 		# turn could be 'x' or 'o'
 		self.turn = 'x'
 
+		# keep track of filled squares
+		# ignoring clicking the filled squares later on
+		self.filled_squares: set[tuple[int, int]] = set()
+
 		# draw the game's grid
 		# vertical lines
 		for i in range(1, 3):
@@ -60,6 +64,13 @@ class TicTacToeGame:
 				x, y = pg.mouse.get_pos()
 				col = x // CELL_SIZE
 				row = y // CELL_SIZE
+
+				# ignore the click if it is within a filled square
+				if (row, col) in self.filled_squares:
+					break
+
+				self.filled_squares.add((row, col))
+
 				center_y = (row * CELL_SIZE) + (CELL_SIZE // 2)
 				center_x = (col * CELL_SIZE) + (CELL_SIZE // 2)
 
