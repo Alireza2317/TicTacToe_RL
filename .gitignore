@@ -1,3 +1,4 @@
 **/.directory
 venv/
 .venv
+.mypy_cache
