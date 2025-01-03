@@ -9,9 +9,12 @@ HEIGHT: int = WIDTH
 CELL_SIZE: int = WIDTH // 3
 
 FONT_SIZE = 30
-GRID_COLOR = (200, 200, 200)
-BG_COLOR = (20, 20, 20)
-GRID_THICKNESS = 5
+BG_COLOR = '#121212'
+GRID_COLOR = '#3a3a3a'
+TEXT_COLOR = '#cccccc'
+X_COLOR = '#00d1ff'
+O_COLOR = '#ff6e6e'
+GRID_THICKNESS = 15
 
 FPS: float = 20
 
@@ -63,23 +66,23 @@ class TicTacToeGame:
 			if mark == 'o':
 				pg.draw.circle(
 					self.screen,
-					color=(200, 0, 0),
+					color=O_COLOR,
 					center=(center_x, center_y),
-					radius=CELL_SIZE//5,
-					width=CELL_SIZE//12
+					radius=CELL_SIZE//4.8,
+					width=CELL_SIZE//14
 				)
 			elif mark == 'x':
 				margin = CELL_SIZE//6
 				pg.draw.line(
 					self.screen,
-					color=(0, 200, 0),
+					color=X_COLOR,
 					start_pos=(center_x-margin, center_y-margin),
 					end_pos=(center_x+margin, center_y+margin),
 					width=15
 				)
 				pg.draw.line(
 					self.screen,
-					color=(0, 200, 0),
+					color=X_COLOR,
 					start_pos=(center_x+margin, center_y-margin),
 					end_pos=(center_x-margin, center_y+margin),
 					width=15
@@ -125,8 +128,8 @@ class TicTacToeGame:
 		self.draw_grid()
 		self.draw_xo()
 		pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
-		
-		text = self.font.render(message, True, (220, 0, 220))
+
+		text = self.font.render(message, True, TEXT_COLOR)
 		self.screen.blit(text, (10, HEIGHT+20))
 		pg.display.update()
 
@@ -181,7 +184,7 @@ class TicTacToeGame:
 		self.screen.fill(BG_COLOR)
 		self.draw_grid()
 		self.draw_xo()
-		text = self.font.render(f'Turn: {self.turn}', False, GRID_COLOR)
+		text = self.font.render(f'Turn: {self.turn}', False, TEXT_COLOR)
 		self.screen.blit(text, (10, HEIGHT+20))
 		pg.display.update()
 
