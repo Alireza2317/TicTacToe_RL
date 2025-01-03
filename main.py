@@ -191,6 +191,10 @@ class TicTacToeGame:
 		self.clock.tick(FPS)
 		return False
 
+
+class Agent:
+	pass
+
 if __name__ == '__main__':
 	game = TicTacToeGame()
 
