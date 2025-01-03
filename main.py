@@ -8,7 +8,7 @@ WIDTH: int = 450
 HEIGHT: int = WIDTH
 CELL_SIZE: int = WIDTH // 3
 
-FONT_SIZE = 12
+FONT_SIZE = 24
 GRID_COLOR = (200, 200, 200)
 BG_COLOR = (20, 20, 20)
 GRID_THICKNESS = 5
@@ -25,7 +25,7 @@ class TicTacToeGame:
 		self.screen.fill(color=BG_COLOR)
 
 		# turn could be 'x' or 'o'
-		self.turn = 'x'
+		self.turn = 'o'
 
 		# keep track of filled squares
 		# ignoring clicking the filled squares later on
@@ -83,18 +83,27 @@ class TicTacToeGame:
 						width=CELL_SIZE//12
 					)
 				elif self.turn == 'x':
-					pg.draw.circle(
+					margin = CELL_SIZE//6
+					pg.draw.line(
 						self.screen,
 						color=(0, 200, 0),
-						center=(center_x, center_y),
-						radius=CELL_SIZE//5,
-						width=CELL_SIZE//12
+						start_pos=(center_x-margin, center_y-margin),
+						end_pos=(center_x+margin, center_y+margin),
+						width=15
+					)
+					pg.draw.line(
+						self.screen,
+						color=(0, 200, 0),
+						start_pos=(center_x+margin, center_y-margin),
+						end_pos=(center_x-margin, center_y+margin),
+						width=15
 					)
 
 				# change the turn after the user played
 				self.turn = 'o' if self.turn == 'x' else 'x'
 
 		pg.display.update()
+
 		self.clock.tick(FPS)
 		return False
 
