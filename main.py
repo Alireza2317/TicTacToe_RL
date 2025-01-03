@@ -8,7 +8,7 @@ WIDTH: int = 450
 HEIGHT: int = WIDTH
 CELL_SIZE: int = WIDTH // 3
 
-FONT_SIZE = 24
+FONT_SIZE = 30
 GRID_COLOR = (200, 200, 200)
 BG_COLOR = (20, 20, 20)
 GRID_THICKNESS = 5
@@ -117,8 +117,23 @@ class TicTacToeGame:
 				return values.pop()
 		if len(self.squares) == 9:
 			return 'draw'
-		
+
 		return None
+
+	def game_over_screen(self, message) -> None:
+		self.screen.fill(BG_COLOR)
+		self.draw_grid()
+		self.draw_xo()
+
+		text = self.font.render(message, True, (220, 0, 220))
+		self.screen.blit(text, (10, HEIGHT+20))
+		pg.display.update()
+
+		while True:
+			for event in pg.event.get():
+				if event.type == pg.QUIT:
+					pg.quit()
+					sys.exit()
 
 
 	def step(self) -> bool:
@@ -143,7 +158,14 @@ class TicTacToeGame:
 				# change the turn after the user played
 				self.turn = 'o' if self.turn == 'x' else 'x'
 
-		print(self.check_win())
+		if (status := self.check_win()):
+			if status != 'draw':
+				self.game_over_screen(f'{status} won!')
+			else:
+				self.game_over_screen(status)
+
+			# game over
+			return True
 
 		self.screen.fill(BG_COLOR)
 		self.draw_grid()
