@@ -45,8 +45,8 @@ class NeuralNetwork:
 
 		#? if parameters is not passed to __init__ set them randomly
 		else:
-			self.weights: list[np.ndarray] = [np.random.randn(*shape) for shape in self._weights_shapes]
-			self.biases: list[np.ndarray] = [np.random.randn(*shape) for shape in self._biases_shapes]
+			self.weights: list[np.ndarray] = [0.2 * np.random.randn(*shape) for shape in self._weights_shapes]
+			self.biases: list[np.ndarray] = [np.zeros(shape=shape) for shape in self._biases_shapes]
 
 			# sets self.parameters, based on weights and biases
 			self.recompute_parameters()
