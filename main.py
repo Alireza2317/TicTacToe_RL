@@ -32,6 +32,9 @@ class TicTacToeGame:
 		self.filled_squares: set[tuple[int, int]] = set()
 
 		# draw the game's grid
+		self.draw_grid()
+
+	def draw_grid(self) -> None:
 		# vertical lines
 		for i in range(1, 3):
 			pg.draw.line(
@@ -102,6 +105,9 @@ class TicTacToeGame:
 				# change the turn after the user played
 				self.turn = 'o' if self.turn == 'x' else 'x'
 
+		#self.screen.fill(BG_COLOR)
+		text = self.font.render(f'Turn: {self.turn}', False, GRID_COLOR)
+		self.screen.blit(text, (10, HEIGHT+20))
 		pg.display.update()
 
 		self.clock.tick(FPS)
