@@ -13,7 +13,7 @@ GRID_COLOR = (200, 200, 200)
 BG_COLOR = (20, 20, 20)
 GRID_THICKNESS = 5
 
-FPS: float = 10
+FPS: float = 20
 
 class TicTacToeGame:
 	def __init__(self) -> None:
@@ -124,7 +124,8 @@ class TicTacToeGame:
 		self.screen.fill(BG_COLOR)
 		self.draw_grid()
 		self.draw_xo()
-
+		pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
+		
 		text = self.font.render(message, True, (220, 0, 220))
 		self.screen.blit(text, (10, HEIGHT+20))
 		pg.display.update()
@@ -137,6 +138,16 @@ class TicTacToeGame:
 
 
 	def step(self) -> bool:
+		x, y = pg.mouse.get_pos()
+		if x < WIDTH and y < HEIGHT:
+			row = y // CELL_SIZE
+			col = x // CELL_SIZE
+			if (row, col) in self.squares:
+				pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
+			else:
+				pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
+		else:
+			pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
 		# handle user events
 		for event in pg.event.get():
 			if event.type == pg.QUIT:
