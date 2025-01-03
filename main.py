@@ -27,9 +27,9 @@ class TicTacToeGame:
 		# turn could be 'x' or 'o'
 		self.turn = 'o'
 
-		# keep track of filled squares
+		# keep track of squares and the content
 		# ignoring clicking the filled squares later on
-		self.filled_squares: set[tuple[int, int]] = set()
+		self.squares: dict[tuple[int, int], str] = {}
 
 		# draw the game's grid
 		self.draw_grid()
@@ -69,10 +69,10 @@ class TicTacToeGame:
 				row = y // CELL_SIZE
 
 				# ignore the click if it is within a filled square
-				if (row, col) in self.filled_squares:
+				if (row, col) in self.squares:
 					break
 
-				self.filled_squares.add((row, col))
+				self.squares.update({(row, col): self.turn})
 
 				center_y = (row * CELL_SIZE) + (CELL_SIZE // 2)
 				center_x = (col * CELL_SIZE) + (CELL_SIZE // 2)
