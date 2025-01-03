@@ -55,6 +55,35 @@ class TicTacToeGame:
 				width=GRID_THICKNESS
 			)
 
+	def draw_xo(self) -> None:
+		for (row, col), mark in self.squares.items():
+			center_y = (row * CELL_SIZE) + (CELL_SIZE // 2)
+			center_x = (col * CELL_SIZE) + (CELL_SIZE // 2)
+
+			if mark == 'o':
+				pg.draw.circle(
+					self.screen,
+					color=(200, 0, 0),
+					center=(center_x, center_y),
+					radius=CELL_SIZE//5,
+					width=CELL_SIZE//12
+				)
+			elif mark == 'x':
+				margin = CELL_SIZE//6
+				pg.draw.line(
+					self.screen,
+					color=(0, 200, 0),
+					start_pos=(center_x-margin, center_y-margin),
+					end_pos=(center_x+margin, center_y+margin),
+					width=15
+				)
+				pg.draw.line(
+					self.screen,
+					color=(0, 200, 0),
+					start_pos=(center_x+margin, center_y-margin),
+					end_pos=(center_x-margin, center_y+margin),
+					width=15
+				)
 
 	def step(self) -> bool:
 		# handle user events
@@ -72,40 +101,15 @@ class TicTacToeGame:
 				if (row, col) in self.squares:
 					break
 
+				# add the current square location and content
 				self.squares.update({(row, col): self.turn})
-
-				center_y = (row * CELL_SIZE) + (CELL_SIZE // 2)
-				center_x = (col * CELL_SIZE) + (CELL_SIZE // 2)
-
-				if self.turn == 'o':
-					pg.draw.circle(
-						self.screen,
-						color=(200, 0, 0),
-						center=(center_x, center_y),
-						radius=CELL_SIZE//5,
-						width=CELL_SIZE//12
-					)
-				elif self.turn == 'x':
-					margin = CELL_SIZE//6
-					pg.draw.line(
-						self.screen,
-						color=(0, 200, 0),
-						start_pos=(center_x-margin, center_y-margin),
-						end_pos=(center_x+margin, center_y+margin),
-						width=15
-					)
-					pg.draw.line(
-						self.screen,
-						color=(0, 200, 0),
-						start_pos=(center_x+margin, center_y-margin),
-						end_pos=(center_x-margin, center_y+margin),
-						width=15
-					)
 
 				# change the turn after the user played
 				self.turn = 'o' if self.turn == 'x' else 'x'
 
-		#self.screen.fill(BG_COLOR)
+		self.screen.fill(BG_COLOR)
+		self.draw_grid()
+		self.draw_xo()
 		text = self.font.render(f'Turn: {self.turn}', False, GRID_COLOR)
 		self.screen.blit(text, (10, HEIGHT+20))
 		pg.display.update()
