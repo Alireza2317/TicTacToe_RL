@@ -85,6 +85,33 @@ class TicTacToeGame:
 					width=15
 				)
 
+	def check_win(self) -> str | None:
+		winning_combos = [
+			((0, 0), (0, 1), (0, 2)),
+			((1, 0), (1, 1), (1, 2)),
+			((2, 0), (2, 1), (2, 2)),
+			((0, 0), (1, 0), (2, 0)),
+			((0, 1), (1, 1), (2, 1)),
+			((0, 2), (1, 2), (2, 2)),
+			((2, 0), (1, 1), (0, 2)),
+			((0, 0), (1, 1), (2, 2)),
+		]
+
+		for combo in winning_combos:
+			# first check if all the positions are filled
+			# if not, just check the next combo
+			if not all(pos in self.squares for pos in combo):
+				continue
+
+			# check if all the values are all the same or not
+			# get all the 3 values and put them in a set
+			values = {self.squares.get(pos) for pos in combo}
+			if len(values) == 1:
+				return values.pop()
+
+		return None
+
+
 	def step(self) -> bool:
 		# handle user events
 		for event in pg.event.get():
