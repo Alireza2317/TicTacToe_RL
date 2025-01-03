@@ -86,6 +86,13 @@ class TicTacToeGame:
 				)
 
 	def check_win(self) -> str | None:
+		"""
+			Checks the game board and returns one of these:
+			'x' if x wins
+			'o' if o wins
+			None if the board is not completely filled and nobody won either
+			'draw' if the board is full and nobody won
+		"""
 		winning_combos = [
 			((0, 0), (0, 1), (0, 2)),
 			((1, 0), (1, 1), (1, 2)),
@@ -108,7 +115,9 @@ class TicTacToeGame:
 			values = {self.squares.get(pos) for pos in combo}
 			if len(values) == 1:
 				return values.pop()
-
+		if len(self.squares) == 9:
+			return 'draw'
+		
 		return None
 
 
@@ -133,6 +142,8 @@ class TicTacToeGame:
 
 				# change the turn after the user played
 				self.turn = 'o' if self.turn == 'x' else 'x'
+
+		print(self.check_win())
 
 		self.screen.fill(BG_COLOR)
 		self.draw_grid()
