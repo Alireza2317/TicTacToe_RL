@@ -1,5 +1,6 @@
 import sys
 import pygame as pg
+from nn import NeuralNetwork
 
 W: int = 450
 H: int = 550
@@ -139,7 +140,6 @@ class TicTacToeGame:
 					pg.quit()
 					sys.exit()
 
-
 	def step(self) -> bool:
 		x, y = pg.mouse.get_pos()
 		if x < WIDTH and y < HEIGHT:
@@ -193,7 +193,28 @@ class TicTacToeGame:
 
 
 class Agent:
-	pass
+	def __init(self) -> None:
+		# creating the neural network
+		# 9 inputs, the game board
+		# 0: empty cells, 1: my mark, -1: opponent's mark
+		# 9 outputs representing Q(s, a) for each cell in the board
+		network = NeuralNetwork(
+			layers_structure=[9, 32, 32, 9],
+			activations='relu'
+		)
+
+		# immediate reward after taking action a in state s
+		# 1 for winning
+		# -1 for losing
+		# -0.5 for draw
+		# 0 for ongoing game
+
+		r: float = 0
+		# discount factor
+		gamma: float = 1
+
+
+
 
 if __name__ == '__main__':
 	game = TicTacToeGame()
