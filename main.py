@@ -9,13 +9,15 @@ WIDTH: int = 450
 HEIGHT: int = WIDTH
 CELL_SIZE: int = WIDTH // 3
 
-FONT_SIZE = 30
+FONT_SIZE = 26
 BG_COLOR = '#121212'
 GRID_COLOR = '#3a3a3a'
 TEXT_COLOR = '#cccccc'
 X_COLOR = '#00d1ff'
 O_COLOR = '#ff6e6e'
 GRID_THICKNESS = 15
+
+FIRST_TURN = 'x'
 
 FPS: float = 20
 
@@ -28,15 +30,7 @@ class TicTacToeGame:
 		self.font = pg.font.Font(pg.font.get_default_font(), FONT_SIZE)
 		self.screen.fill(color=BG_COLOR)
 
-		# turn could be 'x' or 'o'
-		self.turn = 'o'
-
-		# keep track of squares and the content
-		# ignoring clicking the filled squares later on
-		self.squares: dict[tuple[int, int], str] = {}
-
-		# draw the game's grid
-		self.draw_grid()
+		self.reset()
 
 	def draw_grid(self) -> None:
 		# vertical lines
@@ -124,14 +118,16 @@ class TicTacToeGame:
 
 		return None
 
-	def game_over_screen(self, message) -> None:
+	def game_over_screen(self, message) -> bool:
 		self.screen.fill(BG_COLOR)
 		self.draw_grid()
 		self.draw_xo()
 		pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
 
-		text = self.font.render(message, True, TEXT_COLOR)
-		self.screen.blit(text, (10, HEIGHT+20))
+		text1 = self.font.render(message, True, TEXT_COLOR)
+		text2 = self.font.render('Press R to reset & Q to quit.', True, TEXT_COLOR)
+		self.screen.blit(text1, (10, HEIGHT+20))
+		self.screen.blit(text2, (10, HEIGHT+50))
 		pg.display.update()
 
 		while True:
@@ -139,6 +135,22 @@ class TicTacToeGame:
 				if event.type == pg.QUIT:
 					pg.quit()
 					sys.exit()
+
+				if event.type == pg.KEYDOWN:
+					if event.key == pg.K_r:
+						self.reset()
+						return False
+					if event.key == pg.K_q:
+						return True
+
+
+	def reset(self) -> None:
+		# turn could be 'x' or 'o'
+		self.turn = FIRST_TURN
+
+		# keep track of squares and the content
+		# ignoring clicking the filled squares later on
+		self.squares: dict[tuple[int, int], str] = {}
 
 	def step(self) -> bool:
 		x, y = pg.mouse.get_pos()
@@ -172,14 +184,6 @@ class TicTacToeGame:
 				# change the turn after the user played
 				self.turn = 'o' if self.turn == 'x' else 'x'
 
-		if (status := self.check_win()):
-			if status != 'draw':
-				self.game_over_screen(f'{status} won!')
-			else:
-				self.game_over_screen(status)
-
-			# game over
-			return True
 
 		self.screen.fill(BG_COLOR)
 		self.draw_grid()
@@ -189,7 +193,21 @@ class TicTacToeGame:
 		pg.display.update()
 
 		self.clock.tick(FPS)
-		return False
+
+		if (status := self.check_win()):
+			match status:
+				case 'draw':
+					messg = 'Draw.'
+				case 'x':
+					messg = 'X Wins!'
+				case 'o':
+					messg = 'O Wins!'
+
+			if not self.game_over_screen(message=messg):
+				return False
+			return True
+		else:
+			return False
 
 
 class Agent:
