@@ -295,9 +295,6 @@ class Agent:
 			return randint(0, 8)
 		# otherwise pick the action with the highest Q(a, s)
 		else:
-			# convert to numpy array
-			state = np.array(state).reshape((-1, 1))
-
 			q_values = self.network.predict_output(state)
 
 			# if the state[i] == 0, then the cell is empty and is a valid move
@@ -306,8 +303,40 @@ class Agent:
 			return max(valid_actions, key=lambda x: q_values[x])
 
 
-	def update(self):
-		pass
+	def update(
+			self,
+			*,
+			state: list[str],
+			next_state: list[str],
+			action: int,
+			reward: float,
+			done: bool
+	) -> None:
+		"""
+			updates the neural network using the Bellman equation.
+		"""
+		q_values = self.network.predict_output(state)
+		target_q_values = q_values.copy()
+
+		if done:
+			# game is over
+			target_q_values[action] = reward
+		else:
+			# using Bellman equation to compute the target
+			next_q_values = self.network.predict_output(next_state)
+			target_q_values[action] = reward + self.gamma * np.max(next_q_values)
+
+		# train the network
+		state = np.array(state).reshape((-1, 1))
+		target_q_values = np.array(target_q_values).reshape((-1, 1))
+		self.network.train(
+			x_train=state,
+			y_train=target_q_values,
+			learning_rate=self.alpha,
+			constant_lr=True,
+			batch_size=1,
+			number_of_epochs=5
+		)
 
 if __name__ == '__main__':
 	game = TicTacToeGame(render_enabled=True)
