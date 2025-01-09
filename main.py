@@ -2,10 +2,10 @@ import sys
 import pygame as pg
 from nn import NeuralNetwork
 
-W: int = 450
-H: int = 550
+W: int = 620
+H: int = 700
 
-WIDTH: int = 450
+WIDTH: int = W
 HEIGHT: int = WIDTH
 CELL_SIZE: int = WIDTH // 3
 
@@ -34,6 +34,10 @@ class TicTacToeGame:
 
 		self.game_surface = pg.Surface(size=(W, H))
 		self.game_surface.fill(color=BG_COLOR)
+
+		self.text_surface = self.game_surface.subsurface((0, HEIGHT, WIDTH, H-HEIGHT))
+
+		self.draw_grid()
 
 		self.render_enabled: bool = render_enabled
 		self.reset()
@@ -135,36 +139,7 @@ class TicTacToeGame:
 
 		return None
 
-	def game_over_screen(self, message) -> bool:
-		#self.game_surface.fill(BG_COLOR)
-		#self.draw_grid()
-		#self.draw_xo()
-		pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
-
-		text1 = self.font.render(message, True, TEXT_COLOR)
-		text2 = self.font.render('Press R to reset & Q to quit.', True, TEXT_COLOR)
-		self.game_surface.blit(text1, (10, HEIGHT+20))
-		self.game_surface.blit(text2, (10, HEIGHT+50))
-
-		if self.render_enabled:
-			self.clock.tick(FPS)
-			pg.display.update()
-
-		while True:
-			for event in pg.event.get():
-				if event.type == pg.QUIT:
-					pg.quit()
-					sys.exit()
-
-				if event.type == pg.KEYDOWN:
-					if event.key == pg.K_r:
-						self.reset()
-						return False
-					if event.key == pg.K_q:
-						return True
-
-
-	def step(self) -> bool:
+	def handle_cursor(self) -> None:
 		x, y = pg.mouse.get_pos()
 		if x < WIDTH and y < HEIGHT:
 			row = y // CELL_SIZE
@@ -175,6 +150,10 @@ class TicTacToeGame:
 				pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
 		else:
 			pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
+
+	def step(self) -> bool:
+		# setting mouse cursor to the appropriate icon basaed on the mouse position
+		self.handle_cursor()
 
 		# handle user events
 		for event in pg.event.get():
@@ -197,33 +176,34 @@ class TicTacToeGame:
 				# change the turn after the user played
 				self.turn = 'o' if self.turn == 'x' else 'x'
 
-
-		self.game_surface.fill(BG_COLOR)
-		self.draw_grid()
+		# drawing all the marks based on self.squares
 		self.draw_xo()
+
+		# clearing text background before putting new text
+		self.text_surface.fill(BG_COLOR)
+
+		# putting the text on the text surface
 		text = self.font.render(f'Turn: {self.turn}', False, TEXT_COLOR)
-		self.game_surface.blit(text, (10, HEIGHT+20))
+		self.text_surface.blit(text, (10, 10))
 
 		if self.render_enabled:
+			self.screen.blit(self.game_surface, dest=(0, 0))
 			pg.display.update()
 			self.clock.tick(FPS)
-			self.screen.blit(self.game_surface, dest=(0, 0))
+
 
 		if (status := self.check_win()):
 			match status:
 				case 'draw':
-					messg = 'Draw.'
+					print('Draw.')
 				case 'x':
-					messg = 'X Wins!'
+					print('X Wins!')
 				case 'o':
-					messg = 'O Wins!'
+					print('O Wins!')
 
-			if not self.game_over_screen(message=messg):
-				return False
-			return True
-		else:
-			return False
-
+			self.reset()
+			self.game_surface.fill(BG_COLOR)
+			self.draw_grid()
 
 
 class Agent:
