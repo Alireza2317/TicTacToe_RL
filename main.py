@@ -346,7 +346,7 @@ class Agent:
 
 
 def train_agent(agent: Agent, game: TicTacToeGame, episodes=1000) -> None:
-	for episode in range(episodes):
+	for episode in range(1, episodes+1):
 		game.reset()
 		state = game.get_state()
 		done = False
@@ -367,6 +367,10 @@ def train_agent(agent: Agent, game: TicTacToeGame, episodes=1000) -> None:
 			total_reward += reward
 
 		agent.decay_epsilon()
+
+		if episode % 100 == 0:
+			print(f'Episode {episode}:\t{total_reward=}, {agent.epsilon:.3f=}')
+
 
 if __name__ == '__main__':
 	game = TicTacToeGame(render_enabled=True)
