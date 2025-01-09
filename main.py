@@ -139,7 +139,7 @@ class TicTacToeGame:
 
 		return None
 
-	def get_state(self) -> None:
+	def get_state(self) -> list[str]:
 		"""
 			Returns the current board state as a flat list(vector) of 'x', 'o' or ''
 		"""
