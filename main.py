@@ -17,6 +17,7 @@ X_COLOR = '#00d1ff'
 O_COLOR = '#ff6e6e'
 GRID_THICKNESS = 15
 
+# the computer is x
 FIRST_TURN = 'x'
 
 FPS: float = 20
@@ -139,6 +140,9 @@ class TicTacToeGame:
 
 		return None
 
+	def is_game_over(self) -> bool:
+		return (self.check_win() is not None)
+
 	def get_state(self) -> list[str]:
 		"""
 			Returns the current board state as a flat list(vector) of 'x', 'o' or ''
@@ -167,6 +171,26 @@ class TicTacToeGame:
 		# switch the turn
 		self.turn = 'x' if self.turn == 'o' else 'o'
 
+	def get_reward(self) -> float | None:
+		"""
+			Returns the reward for the current game state:
+			+1.0 for a win by X
+			-1.0 for a win by O
+			-0.5 for draw
+			None if the game continues
+		"""
+
+		game_result = self.check_win()
+
+		if not game_result: return None
+
+		match game_result:
+			case 'x':
+				return +1.0
+			case 'o':
+				return -1.0
+			case 'draw':
+				return -0.5
 
 	def handle_cursor(self) -> None:
 		x, y = pg.mouse.get_pos()
