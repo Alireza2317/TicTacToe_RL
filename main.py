@@ -155,7 +155,7 @@ class TicTacToeGame:
 		state: list[int] = [0 for _ in range(9)]
 
 		for (row, col), mark in self.squares.items():
-			state[(row * 3) + col] = 1 if mark == 'x' else -1
+			state[(row * 3) + col] = 1 if mark == AI_MARK else -1
 
 		return state
 
@@ -223,7 +223,7 @@ class TicTacToeGame:
 		# setting mouse cursor to the appropriate icon basaed on the mouse position
 		self.handle_cursor()
 
-		if self.turn == AI_MARK:	
+		if self.turn == AI_MARK and action >= 0:	
 			self.squares.update({coordinate: AI_MARK})
 			self.turn = 'o' if self.turn == 'x' else 'x'
 
@@ -279,9 +279,6 @@ class TicTacToeGame:
 					print('O Wins!')
 					return self.get_state(), -1.0, True
 
-			self.reset()
-			self.game_surface.fill(BG_COLOR)
-			self.draw_grid()
 
 		# the game continues
 		return self.get_state(), 0, False
@@ -378,6 +375,8 @@ def train_agent(agent: Agent, game: TicTacToeGame, episodes=8) -> None:
 		done = False
 		total_reward = 0
 
+		# this loop corresponds to ONE game
+		# unless the AI plays an invalid move and it breaks
 		while not done:
 			if game.turn == AI_MARK:
 				# choose an action
@@ -385,16 +384,23 @@ def train_agent(agent: Agent, game: TicTacToeGame, episodes=8) -> None:
 
 				# apply it in the game environment
 				next_state, reward, done = game.step(action)
+				
 
-				while not done:
+				num_moves = len(game.squares)
+				while len(game.squares) <= num_moves:
 					next_state, reward, done = game.step(-1)
 
+			print(game.squares)
 			# update the agent
 			agent.update(state, action, reward, next_state, done)
 
 			# transition to the next state
 			state = next_state
 			total_reward += reward
+
+			# reset if game was over
+			if done:
+				game.reset()
 
 		agent.decay_epsilon()
 
