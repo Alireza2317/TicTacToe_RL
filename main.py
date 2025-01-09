@@ -34,7 +34,7 @@ class TicTacToeGame:
 
 		self.game_surface = pg.Surface(size=(W, H))
 		self.game_surface.fill(color=BG_COLOR)
-		
+
 		self.render_enabled: bool = render_enabled
 		self.reset()
 
@@ -53,7 +53,7 @@ class TicTacToeGame:
 		# vertical lines
 		for i in range(1, 3):
 			pg.draw.line(
-				surface=self.screen,
+				surface=self.game_surface,
 				color=GRID_COLOR,
 				start_pos=(i * CELL_SIZE, 0),
 				end_pos=(i * CELL_SIZE, HEIGHT),
@@ -63,7 +63,7 @@ class TicTacToeGame:
 		# horizental lines
 		for i in range(1, 3):
 			pg.draw.line(
-				surface=self.screen,
+				surface=self.game_surface,
 				color=GRID_COLOR,
 				start_pos=(0, i * CELL_SIZE),
 				end_pos=(WIDTH, i * CELL_SIZE),
@@ -77,7 +77,7 @@ class TicTacToeGame:
 
 			if mark == 'o':
 				pg.draw.circle(
-					self.screen,
+					self.game_surface,
 					color=O_COLOR,
 					center=(center_x, center_y),
 					radius=CELL_SIZE//4.8,
@@ -86,14 +86,14 @@ class TicTacToeGame:
 			elif mark == 'x':
 				margin = CELL_SIZE//6
 				pg.draw.line(
-					self.screen,
+					self.game_surface,
 					color=X_COLOR,
 					start_pos=(center_x-margin, center_y-margin),
 					end_pos=(center_x+margin, center_y+margin),
 					width=15
 				)
 				pg.draw.line(
-					self.screen,
+					self.game_surface,
 					color=X_COLOR,
 					start_pos=(center_x+margin, center_y-margin),
 					end_pos=(center_x-margin, center_y+margin),
@@ -136,16 +136,19 @@ class TicTacToeGame:
 		return None
 
 	def game_over_screen(self, message) -> bool:
-		self.screen.fill(BG_COLOR)
-		self.draw_grid()
-		self.draw_xo()
+		#self.game_surface.fill(BG_COLOR)
+		#self.draw_grid()
+		#self.draw_xo()
 		pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
 
 		text1 = self.font.render(message, True, TEXT_COLOR)
 		text2 = self.font.render('Press R to reset & Q to quit.', True, TEXT_COLOR)
-		self.screen.blit(text1, (10, HEIGHT+20))
-		self.screen.blit(text2, (10, HEIGHT+50))
-		pg.display.update()
+		self.game_surface.blit(text1, (10, HEIGHT+20))
+		self.game_surface.blit(text2, (10, HEIGHT+50))
+
+		if self.render_enabled:
+			self.clock.tick(FPS)
+			pg.display.update()
 
 		while True:
 			for event in pg.event.get():
@@ -172,6 +175,7 @@ class TicTacToeGame:
 				pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
 		else:
 			pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
+
 		# handle user events
 		for event in pg.event.get():
 			if event.type == pg.QUIT:
@@ -194,14 +198,16 @@ class TicTacToeGame:
 				self.turn = 'o' if self.turn == 'x' else 'x'
 
 
-		self.screen.fill(BG_COLOR)
+		self.game_surface.fill(BG_COLOR)
 		self.draw_grid()
 		self.draw_xo()
 		text = self.font.render(f'Turn: {self.turn}', False, TEXT_COLOR)
-		self.screen.blit(text, (10, HEIGHT+20))
-		pg.display.update()
+		self.game_surface.blit(text, (10, HEIGHT+20))
 
-		self.clock.tick(FPS)
+		if self.render_enabled:
+			pg.display.update()
+			self.clock.tick(FPS)
+			self.screen.blit(self.game_surface, dest=(0, 0))
 
 		if (status := self.check_win()):
 			match status:
@@ -217,6 +223,7 @@ class TicTacToeGame:
 			return True
 		else:
 			return False
+
 
 
 class Agent:
@@ -244,7 +251,7 @@ class Agent:
 
 
 if __name__ == '__main__':
-	game = TicTacToeGame()
+	game = TicTacToeGame(render_enabled=True)
 
 	while True:
 		game_over = game.step()
