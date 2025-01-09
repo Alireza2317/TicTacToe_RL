@@ -210,6 +210,16 @@ class TicTacToeGame:
 			pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
 
 	def step(self, action: int) -> tuple[list[int], float, bool]:
+		"""
+			steps the game with the given action
+			returns the next_state, reward, done(game over flag)
+		"""
+		coordinate = divmod(action, 3)
+
+		# invalid move
+		if coordinate in self.squares:
+			return self.get_state(), -10, True
+
 		# setting mouse cursor to the appropriate icon basaed on the mouse position
 		self.handle_cursor()
 
@@ -220,6 +230,8 @@ class TicTacToeGame:
 				sys.exit()
 
 			if event.type == pg.MOUSEBUTTONDOWN:
+				if self.turn == AI_MARK:
+					break
 				x, y = pg.mouse.get_pos()
 				col = x // CELL_SIZE
 				row = y // CELL_SIZE
@@ -254,15 +266,20 @@ class TicTacToeGame:
 			match status:
 				case 'draw':
 					print('Draw.')
+					return self.get_state(), -0.5, True
 				case 'x':
 					print('X Wins!')
+					return self.get_state(), +1.0, True
 				case 'o':
 					print('O Wins!')
+					return self.get_state(), -1.0, True
 
 			self.reset()
 			self.game_surface.fill(BG_COLOR)
 			self.draw_grid()
 
+		# the game continues
+		return self.get_state(), 0, False
 
 class Agent:
 	def __init__(self) -> None:
@@ -343,7 +360,7 @@ class Agent:
 			learning_rate=self.alpha,
 			constant_lr=True,
 			batch_size=1,
-			number_of_epochs=5
+			number_of_epochs=1
 		)
 
 
@@ -356,6 +373,10 @@ def train_agent(agent: Agent, game: TicTacToeGame, episodes=100) -> None:
 		total_reward = 0
 
 		while not done:
+			game.screen.blit(game.game_surface, dest=(0, 0))
+			pg.display.update()
+			game.clock.tick(FPS)
+
 			# choose an action
 			action = agent.choose_action(state=state)
 
@@ -373,16 +394,12 @@ def train_agent(agent: Agent, game: TicTacToeGame, episodes=100) -> None:
 
 		if episode % 2 == 0:
 			print(f'Episode {episode}:\t{total_reward=}, {agent.epsilon:.3f=}')
-	agent.network.save_parameters_to_file('agent_params.txt')
+
+	agent.network.save_parameters_to_file()
+	with open('params.txt', 'a') as file:
+		file.write(f'{agent.epsilon},{total_reward}\n')
 
 if __name__ == '__main__':
-	game = TicTacToeGame(render_enabled=True)
-
-	while True:
-		game_over = game.step()
-
-		if game_over:
-			break
-
-	pg.quit()
-	sys.exit()
+	game  = TicTacToeGame()
+	agent = Agent()
+	train_agent(agent, game)
