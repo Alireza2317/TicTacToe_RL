@@ -289,7 +289,7 @@ class Agent:
 		# should decay over training to lower the exploration
 		self.epsilon: float = 1
 
-	def choose_action(self, state: list[str]):
+	def choose_action(self, state: list[str]) -> int:
 		# with probability epsilon, pick a random action
 		if random() < self.epsilon:
 			return randint(0, 8)
