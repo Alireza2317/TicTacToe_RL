@@ -131,10 +131,13 @@ class NeuralNetwork:
 		return MSE
 
 
-	def predict_output(self, sample: np.ndarray) -> np.ndarray:
+	def predict_output(self, sample: np.ndarray | list) -> np.ndarray:
 		"""
 		This method takes in a single sample and outputs the entire output layer.
 		"""
+		if isinstance(sample, list):
+			sample = np.array(sample).reshape((-1, 1))
+
 		#* sample.shape = (self.layers_structure[0], 1)
 		if sample.shape != (self.layers_structure[0], 1):
 			raise ValueError(f'{sample.shape} is a bad shape for input. should be {(self.layers_structure[0], 1)}.')
