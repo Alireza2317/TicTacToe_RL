@@ -19,8 +19,8 @@ X_COLOR = '#00d1ff'
 O_COLOR = '#ff6e6e'
 GRID_THICKNESS = 15
 
-# the computer is x
-FIRST_TURN = 'x'
+# the computer is X or state 1
+AI_MARK = 'x'
 
 FPS: float = 20
 
@@ -47,7 +47,7 @@ class TicTacToeGame:
 
 	def reset(self) -> None:
 		# turn could be 'x' or 'o'
-		self.turn = FIRST_TURN
+		self.turn = AI_MARK
 
 		# keep track of squares and the content
 		# ignoring clicking the filled squares later on
@@ -145,14 +145,17 @@ class TicTacToeGame:
 	def is_game_over(self) -> bool:
 		return (self.check_win() is not None)
 
-	def get_state(self) -> list[str]:
+	def get_state(self) -> list[int]:
 		"""
-			Returns the current board state as a flat list(vector) of 'x', 'o' or ''
+			Returns the current board state as a flat list(vector) of:
+			+1 as in X,
+			-1 as in O,
+			0 as in empty cell
 		"""
-		state: list[str] = ['' for _ in range(9)]
+		state: list[int] = [0 for _ in range(9)]
 
 		for (row, col), mark in self.squares.items():
-			state[(row * 3) + col] = mark
+			state[(row * 3) + col] = 1 if mark == 'x' else -1
 
 		return state
 
@@ -206,7 +209,7 @@ class TicTacToeGame:
 		else:
 			pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
 
-	def step(self) -> bool:
+	def step(self, action: int) -> tuple[list[int], float, bool]:
 		# setting mouse cursor to the appropriate icon basaed on the mouse position
 		self.handle_cursor()
 
@@ -289,7 +292,7 @@ class Agent:
 		# should decay over training to lower the exploration
 		self.epsilon: float = 1
 
-	def choose_action(self, state: list[str]) -> int:
+	def choose_action(self, state: list[int]) -> int:
 		# with probability epsilon, pick a random action
 		if random() < self.epsilon:
 			return randint(0, 8)
@@ -311,10 +314,10 @@ class Agent:
 
 	def update(
 			self,
-			state: list[str],
+			state: list[int],
 			action: int,
 			reward: float,
-			next_state: list[str],
+			next_state: list[int],
 			done: bool
 	) -> None:
 		"""
@@ -345,7 +348,7 @@ class Agent:
 
 
 
-def train_agent(agent: Agent, game: TicTacToeGame, episodes=1000) -> None:
+def train_agent(agent: Agent, game: TicTacToeGame, episodes=100) -> None:
 	for episode in range(1, episodes+1):
 		game.reset()
 		state = game.get_state()
@@ -368,9 +371,9 @@ def train_agent(agent: Agent, game: TicTacToeGame, episodes=1000) -> None:
 
 		agent.decay_epsilon()
 
-		if episode % 100 == 0:
+		if episode % 2 == 0:
 			print(f'Episode {episode}:\t{total_reward=}, {agent.epsilon:.3f=}')
-
+	agent.network.save_parameters_to_file('agent_params.txt')
 
 if __name__ == '__main__':
 	game = TicTacToeGame(render_enabled=True)
