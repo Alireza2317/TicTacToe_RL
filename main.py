@@ -139,6 +139,17 @@ class TicTacToeGame:
 
 		return None
 
+	def get_state(self) -> None:
+		"""
+			Returns the current board state as a flat list(vector) of 'x', 'o' or ''
+		"""
+		state: list[str] = ['' for _ in range(9)]
+
+		for (row, col), mark in self.squares.items():
+			state[(row * 3) + col] = mark
+
+		return state
+
 	def handle_cursor(self) -> None:
 		x, y = pg.mouse.get_pos()
 		if x < WIDTH and y < HEIGHT:
