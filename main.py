@@ -1,5 +1,7 @@
 import sys
+from random import randint, random
 import pygame as pg
+import numpy as np
 from nn import NeuralNetwork
 
 W: int = 620
@@ -260,28 +262,52 @@ class TicTacToeGame:
 
 
 class Agent:
-	def __init(self) -> None:
+	def __init__(self) -> None:
 		# creating the neural network
 		# 9 inputs, the game board
 		# 0: empty cells, 1: my mark, -1: opponent's mark
 		# 9 outputs representing Q(s, a) for each cell in the board
-		network = NeuralNetwork(
+		self.network = NeuralNetwork(
 			layers_structure=[9, 32, 32, 9],
 			activations='relu'
 		)
 
 		# immediate reward after taking action a in state s
-		# 1 for winning
+		# +1 for winning
 		# -1 for losing
 		# -0.5 for draw
 		# 0 for ongoing game
 
 		r: float = 0
 		# discount factor
-		gamma: float = 1
+		self.gamma: float = 1
+
+		# learning rate
+		self.alpha: float = 0.01
+
+		# epsilon-greedy policy for explore-exploit trade-off
+		# should decay over training to lower the exploration
+		self.epsilon: float = 1
+
+	def choose_action(self, state: list[str]):
+		# with probability epsilon, pick a random action
+		if random() < self.epsilon:
+			return randint(0, 8)
+		# otherwise pick the action with the highest Q(a, s)
+		else:
+			# convert to numpy array
+			state = np.array(state).reshape((-1, 1))
+
+			q_values = self.network.predict_output(state)
+
+			# if the state[i] == 0, then the cell is empty and is a valid move
+			valid_actions = [x for x in range(9) if state[x] == 0]
+
+			return max(valid_actions, key=lambda x: q_values[x])
 
 
-
+	def update(self):
+		pass
 
 if __name__ == '__main__':
 	game = TicTacToeGame(render_enabled=True)
