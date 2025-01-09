@@ -302,14 +302,19 @@ class Agent:
 
 			return max(valid_actions, key=lambda x: q_values[x])
 
+	def decay_epsilon(self) -> None:
+		"""
+			decay epsilon over time to minimize exploration
+		"""
+		if self.epsilon >= 0.1:
+			self.epsilon = self.epsilon * 0.995
 
 	def update(
 			self,
-			*,
 			state: list[str],
-			next_state: list[str],
 			action: int,
 			reward: float,
+			next_state: list[str],
 			done: bool
 	) -> None:
 		"""
@@ -337,6 +342,31 @@ class Agent:
 			batch_size=1,
 			number_of_epochs=5
 		)
+
+
+
+def train_agent(agent: Agent, game: TicTacToeGame, episodes=1000) -> None:
+	for episode in range(episodes):
+		game.reset()
+		state = game.get_state()
+		done = False
+		total_reward = 0
+
+		while not done:
+			# choose an action
+			action = agent.choose_action(state=state)
+
+			# apply it in the game environment
+			next_state, reward, done = game.step(action)
+
+			# update the agent
+			agent.update(state, action, reward, next_state, done)
+
+			# transition to the next state
+			state = next_state
+			total_reward += reward
+
+		agent.decay_epsilon()
 
 if __name__ == '__main__':
 	game = TicTacToeGame(render_enabled=True)
