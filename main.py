@@ -1,5 +1,5 @@
 import sys
-from random import randint, random
+from random import randint, random, choice
 import pygame as pg
 import numpy as np
 from nn import NeuralNetwork
@@ -223,30 +223,35 @@ class TicTacToeGame:
 		# setting mouse cursor to the appropriate icon basaed on the mouse position
 		self.handle_cursor()
 
-		# handle user events
-		for event in pg.event.get():
-			if event.type == pg.QUIT:
-				pg.quit()
-				sys.exit()
+		if self.turn == AI_MARK:	
+			self.squares.update({coordinate: AI_MARK})
+			self.turn = 'o' if self.turn == 'x' else 'x'
 
-			if event.type == pg.MOUSEBUTTONDOWN:
-				if self.turn == AI_MARK:
-					break
-				x, y = pg.mouse.get_pos()
-				col = x // CELL_SIZE
-				row = y // CELL_SIZE
+		else:
+			# handle user events
+			for event in pg.event.get():
+				if event.type == pg.QUIT:
+					pg.quit()
+					sys.exit()
 
-				# ignore the click if it is within a filled square
-				if (row, col) in self.squares:
-					break
+				if event.type == pg.MOUSEBUTTONDOWN:
+					x, y = pg.mouse.get_pos()
+					col = x // CELL_SIZE
+					row = y // CELL_SIZE
 
-				# add the current square location and content
-				self.squares.update({(row, col): self.turn})
+					# ignore the click if it is within a filled square
+					if (row, col) in self.squares:
+						break
 
-				# change the turn after the user played
-				self.turn = 'o' if self.turn == 'x' else 'x'
+					# add the current square location and content
+					self.squares.update({(row, col): self.turn})
+
+					# change the turn after the user played
+					self.turn = 'o' if self.turn == 'x' else 'x'
 
 		# drawing all the marks based on self.squares
+		self.game_surface.fill(BG_COLOR)
+		self.draw_grid()
 		self.draw_xo()
 
 		# clearing text background before putting new text
@@ -310,15 +315,16 @@ class Agent:
 		self.epsilon: float = 1
 
 	def choose_action(self, state: list[int]) -> int:
+		# if the state[i] == 0, then the cell is empty and is a valid move
+		valid_actions = [i for i in range(9) if state[i] == 0]
+		
 		# with probability epsilon, pick a random action
 		if random() < self.epsilon:
-			return randint(0, 8)
+			return choice(valid_actions)
+	
 		# otherwise pick the action with the highest Q(a, s)
 		else:
 			q_values = self.network.predict_output(state)
-
-			# if the state[i] == 0, then the cell is empty and is a valid move
-			valid_actions = [x for x in range(9) if state[x] == 0]
 
 			return max(valid_actions, key=lambda x: q_values[x])
 
@@ -365,7 +371,7 @@ class Agent:
 
 
 
-def train_agent(agent: Agent, game: TicTacToeGame, episodes=100) -> None:
+def train_agent(agent: Agent, game: TicTacToeGame, episodes=8) -> None:
 	for episode in range(1, episodes+1):
 		game.reset()
 		state = game.get_state()
@@ -373,15 +379,15 @@ def train_agent(agent: Agent, game: TicTacToeGame, episodes=100) -> None:
 		total_reward = 0
 
 		while not done:
-			game.screen.blit(game.game_surface, dest=(0, 0))
-			pg.display.update()
-			game.clock.tick(FPS)
+			if game.turn == AI_MARK:
+				# choose an action
+				action = agent.choose_action(state=state)
 
-			# choose an action
-			action = agent.choose_action(state=state)
+				# apply it in the game environment
+				next_state, reward, done = game.step(action)
 
-			# apply it in the game environment
-			next_state, reward, done = game.step(action)
+				while not done:
+					next_state, reward, done = game.step(-1)
 
 			# update the agent
 			agent.update(state, action, reward, next_state, done)
@@ -393,7 +399,7 @@ def train_agent(agent: Agent, game: TicTacToeGame, episodes=100) -> None:
 		agent.decay_epsilon()
 
 		if episode % 2 == 0:
-			print(f'Episode {episode}:\t{total_reward=}, {agent.epsilon:.3f=}')
+			print(f'Episode {episode}:\t{total_reward=}, {agent.epsilon=:.3f}')
 
 	agent.network.save_parameters_to_file()
 	with open('params.txt', 'a') as file:
