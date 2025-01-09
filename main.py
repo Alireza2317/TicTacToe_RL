@@ -22,15 +22,32 @@ FIRST_TURN = 'x'
 FPS: float = 20
 
 class TicTacToeGame:
-	def __init__(self) -> None:
+	def __init__(self, render_enabled: bool = True) -> None:
 		pg.init()
 		self.screen = pg.display.set_mode((W, H))
-		pg.display.set_caption('Tic Tac Toe')
-		self.clock = pg.time.Clock()
-		self.font = pg.font.Font(pg.font.get_default_font(), FONT_SIZE)
 		self.screen.fill(color=BG_COLOR)
 
+		pg.display.set_caption('Tic Tac Toe')
+
+		self.clock = pg.time.Clock()
+		self.font = pg.font.Font(pg.font.get_default_font(), FONT_SIZE)
+
+		self.game_surface = pg.Surface(size=(W, H))
+		self.game_surface.fill(color=BG_COLOR)
+		
+		self.render_enabled: bool = render_enabled
 		self.reset()
+
+	def reset(self) -> None:
+		# turn could be 'x' or 'o'
+		self.turn = FIRST_TURN
+
+		# keep track of squares and the content
+		# ignoring clicking the filled squares later on
+		self.squares: dict[tuple[int, int], str] = {}
+
+	def set_render(self, status: bool = True) -> None:
+		self.render_enabled = status
 
 	def draw_grid(self) -> None:
 		# vertical lines
@@ -143,14 +160,6 @@ class TicTacToeGame:
 					if event.key == pg.K_q:
 						return True
 
-
-	def reset(self) -> None:
-		# turn could be 'x' or 'o'
-		self.turn = FIRST_TURN
-
-		# keep track of squares and the content
-		# ignoring clicking the filled squares later on
-		self.squares: dict[tuple[int, int], str] = {}
 
 	def step(self) -> bool:
 		x, y = pg.mouse.get_pos()
