@@ -150,6 +150,24 @@ class TicTacToeGame:
 
 		return state
 
+	def apply_action(self, action: int) -> bool:
+		"""
+			Applies an action (0-8) to the board.
+			returns True if valid, False otherwise.
+		"""
+		coordinate = divmod(action, 3)
+
+		# invalid move(action)
+		if coordinate in self.squares:
+			return False
+
+		# set the valid action into the board
+		self.squares[coordinate] = self.turn
+
+		# switch the turn
+		self.turn = 'x' if self.turn == 'o' else 'o'
+
+
 	def handle_cursor(self) -> None:
 		x, y = pg.mouse.get_pos()
 		if x < WIDTH and y < HEIGHT:
