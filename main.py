@@ -255,13 +255,6 @@ class Agent:
 			activations='relu'
 		)
 
-		# immediate reward after taking action a in state s
-		# +1 for winning
-		# -1 for losing
-		# -0.5 for draw
-		# 0 for ongoing game
-
-		r: float = 0
 		# discount factor
 		self.gamma: float = 1
 
@@ -290,8 +283,8 @@ class Agent:
 		"""
 			decay epsilon over time to minimize exploration
 		"""
-		if self.epsilon >= 0.1:
-			self.epsilon = self.epsilon * 0.995
+		if self.epsilon >= 0.12:
+			self.epsilon = self.epsilon * 0.99
 
 	def update(
 			self,
