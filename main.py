@@ -326,8 +326,9 @@ class Agent:
 			learning_rate=self.alpha,
 			constant_lr=True,
 			batch_size=1,
-			number_of_epochs=1
+			number_of_epochs=5
 		)
+
 
 def train_agent_manually(agent: Agent, game: TicTacToeGame, resume: bool = False, episodes=50) -> None:
 	if resume:
