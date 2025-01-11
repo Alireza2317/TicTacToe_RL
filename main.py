@@ -20,12 +20,13 @@ O_COLOR = '#ff6e6e'
 GRID_THICKNESS = 15
 
 # the computer is X or state 1
+# the computer will always play the first move
 AI_MARK = 'x'
 
 FPS: float = 20
 
 class TicTacToeGame:
-	def __init__(self, render_enabled: bool = True) -> None:
+	def __init__(self) -> None:
 		pg.init()
 		self.screen = pg.display.set_mode((W, H))
 		self.screen.fill(color=BG_COLOR)
@@ -42,7 +43,6 @@ class TicTacToeGame:
 
 		self.draw_grid()
 
-		self.render_enabled: bool = render_enabled
 		self.reset()
 
 	def reset(self) -> None:
@@ -53,8 +53,22 @@ class TicTacToeGame:
 		# ignoring clicking the filled squares later on
 		self.squares: dict[tuple[int, int], str] = {}
 
-	def set_render(self, status: bool = True) -> None:
-		self.render_enabled = status
+	def render(self) -> None:
+		"""
+			rendering all the game board and the turn text
+		"""
+		# drawing all the marks based on self.squares
+		self.game_surface.fill(BG_COLOR)
+		self.draw_grid()
+		self.draw_xo()
+
+		# putting the text on the text surface
+		text = self.font.render(f'Turn: {self.turn}', False, TEXT_COLOR)
+		self.text_surface.blit(text, (10, 10))
+
+		self.screen.blit(self.game_surface, dest=(0, 0))
+		pg.display.update()
+		self.clock.tick(FPS)
 
 	def draw_grid(self) -> None:
 		# vertical lines
@@ -142,14 +156,11 @@ class TicTacToeGame:
 
 		return None
 
-	def is_game_over(self) -> bool:
-		return (self.check_win() is not None)
-
 	def get_state(self) -> list[int]:
 		"""
 			Returns the current board state as a flat list(vector) of:
-			+1 as in X,
-			-1 as in O,
+			+1 as in X (AI_MARK),
+			-1 as in O (oponent's mark),
 			0 as in empty cell
 		"""
 		state: list[int] = [0 for _ in range(9)]
@@ -158,23 +169,6 @@ class TicTacToeGame:
 			state[(row * 3) + col] = 1 if mark == AI_MARK else -1
 
 		return state
-
-	def apply_action(self, action: int) -> bool:
-		"""
-			Applies an action (0-8) to the board.
-			returns True if valid, False otherwise.
-		"""
-		coordinate = divmod(action, 3)
-
-		# invalid move(action)
-		if coordinate in self.squares:
-			return False
-
-		# set the valid action into the board
-		self.squares[coordinate] = self.turn
-
-		# switch the turn
-		self.turn = 'x' if self.turn == 'o' else 'o'
 
 	def get_reward(self) -> float | None:
 		"""
@@ -185,11 +179,11 @@ class TicTacToeGame:
 			None if the game continues
 		"""
 
-		game_result = self.check_win()
+		game_over: bool | None = self.check_win()
 
-		if not game_result: return None
+		if not game_over: return None
 
-		match game_result:
+		match game_over:
 			case 'x':
 				return +1.0
 			case 'o':
@@ -197,91 +191,58 @@ class TicTacToeGame:
 			case 'draw':
 				return -0.5
 
-	def handle_cursor(self) -> None:
-		x, y = pg.mouse.get_pos()
-		if x < WIDTH and y < HEIGHT:
-			row = y // CELL_SIZE
-			col = x // CELL_SIZE
-			if (row, col) in self.squares:
-				pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
-			else:
-				pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
-		else:
-			pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
-
 	def step(self, action: int) -> tuple[list[int], float, bool]:
 		"""
 			steps the game with the given action
+			only handles the ai's turn and move
 			returns the next_state, reward, done(game over flag)
 		"""
-		coordinate = divmod(action, 3)
 
-		# invalid move
-		if coordinate in self.squares:
-			return self.get_state(), -10, True
-
-		# setting mouse cursor to the appropriate icon basaed on the mouse position
-		self.handle_cursor()
-
-		if self.turn == AI_MARK and action >= 0:	
+		if self.turn == AI_MARK:
+			coordinate = divmod(action, 3)
+			# invalid move
+			if coordinate in self.squares:
+				print('INVALID MOVE!')
+				return self.get_state(), -10, True
+			
+			# valid moves
 			self.squares.update({coordinate: AI_MARK})
 			self.turn = 'o' if self.turn == 'x' else 'x'
 
-		else:
-			# handle user events
-			for event in pg.event.get():
-				if event.type == pg.QUIT:
-					pg.quit()
-					sys.exit()
-
-				if event.type == pg.MOUSEBUTTONDOWN:
-					x, y = pg.mouse.get_pos()
-					col = x // CELL_SIZE
-					row = y // CELL_SIZE
-
-					# ignore the click if it is within a filled square
-					if (row, col) in self.squares:
-						break
-
-					# add the current square location and content
-					self.squares.update({(row, col): self.turn})
-
-					# change the turn after the user played
-					self.turn = 'o' if self.turn == 'x' else 'x'
-
-		# drawing all the marks based on self.squares
-		self.game_surface.fill(BG_COLOR)
-		self.draw_grid()
-		self.draw_xo()
-
-		# clearing text background before putting new text
-		self.text_surface.fill(BG_COLOR)
-
-		# putting the text on the text surface
-		text = self.font.render(f'Turn: {self.turn}', False, TEXT_COLOR)
-		self.text_surface.blit(text, (10, 10))
-
-		if self.render_enabled:
-			self.screen.blit(self.game_surface, dest=(0, 0))
-			pg.display.update()
-			self.clock.tick(FPS)
-
+		
+		self.render()
 
 		if (status := self.check_win()):
 			match status:
 				case 'draw':
 					print('Draw.')
-					return self.get_state(), -0.5, True
 				case 'x':
 					print('X Wins!')
-					return self.get_state(), +1.0, True
 				case 'o':
 					print('O Wins!')
-					return self.get_state(), -1.0, True
+			
+			reward = self.get_reward()
+			state = self.get_state()
+
+			self.reset()
+			self.render()
+			
+			return state, reward, True
 
 
 		# the game continues
 		return self.get_state(), 0, False
+
+	def get_click_coordinate(self) -> tuple[int, int]:
+		"""
+			getting the user's move from the mouse clicks
+			returns the coordinate based on the game's 3x3 board
+		"""
+		x, y = pg.mouse.get_pos()
+		col = x // CELL_SIZE
+		row = y // CELL_SIZE
+
+		return (row, col)
 
 class Agent:
 	def __init__(self) -> None:
