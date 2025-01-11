@@ -266,6 +266,9 @@ class Agent:
 		self.epsilon: float = 1
 
 	def choose_action(self, state: list[int]) -> int:
+		"""
+		chooses and returns only a VALID move based on the current state
+		"""
 		# if the state[i] == 0, then the cell is empty and is a valid move
 		valid_actions = [i for i in range(9) if state[i] == 0]
 		
@@ -296,6 +299,12 @@ class Agent:
 	) -> None:
 		"""
 			updates the neural network using the Bellman equation.
+
+			@param state: the current state of the game
+			@param action: the action that the agent picked for the state
+			@param reward: the reward that the agent received for the action
+			@param next_state: the state after the agent's action
+			@param done: if the game is over or not
 		"""
 		q_values = self.network.predict_output(state)
 		target_q_values = q_values.copy()
