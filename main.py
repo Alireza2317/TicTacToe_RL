@@ -320,52 +320,83 @@ class Agent:
 			number_of_epochs=1
 		)
 
-
-
-def train_agent(agent: Agent, game: TicTacToeGame, episodes=8) -> None:
-	for episode in range(1, episodes+1):
+def train_agent_manually(agent: Agent, game: TicTacToeGame, resume: bool = False, episodes=50) -> None:
+	if resume:
+		agent.network.load_params_from_file('nn_params.txt')
+		with open('params.txt', 'r') as file:
+			eps = float(file.read().strip())
+			agent.epsilon = eps
+		
+	total_reward: float = 0
+	for episode in range(1, episodes + 1):
 		game.reset()
-		state = game.get_state()
-		done = False
-		total_reward = 0
+		state: list[int] = game.get_state()
+		done: bool = False
 
-		# this loop corresponds to ONE game
-		# unless the AI plays an invalid move and it breaks
+		# Variables to track the AI's state and action
+		ai_state = None
+		ai_action = None
+
 		while not done:
 			if game.turn == AI_MARK:
-				# choose an action
-				action = agent.choose_action(state=state)
+				# Store the AI's state and action
+				ai_state = state
+				ai_action = agent.choose_action(state=state)
 
-				# apply it in the game environment
-				next_state, reward, done = game.step(action)
-				
+				# Step the game with the AI's move
+				next_state, reward, done = game.step(ai_action)
 
-				num_moves = len(game.squares)
-				while len(game.squares) <= num_moves:
-					next_state, reward, done = game.step(-1)
+				# Update the agent immediately after the AI's move
+				agent.update(ai_state, ai_action, reward, next_state, done)
+				total_reward += reward
 
-			print(game.squares)
-			# update the agent
-			agent.update(state, action, reward, next_state, done)
+				# Transition to the next state
+				state = next_state
+			else:
+				# Handle user's input
+				for event in pg.event.get():
+					if event.type == pg.QUIT:
+						pg.quit()
+						sys.exit()
 
-			# transition to the next state
-			state = next_state
-			total_reward += reward
+					if event.type == pg.MOUSEBUTTONDOWN:
+						position: tuple[int, int] = game.get_user_input()
 
-			# reset if game was over
-			if done:
-				game.reset()
+						# A valid move
+						if position not in game.squares:
+							# Update the board
+							game.squares.update({position: game.turn})
+
+							# Switch the turn
+							game.turn = 'x' if game.turn == 'o' else 'o'
+
+							# Get the new state after the user's move
+							next_state = game.get_state()
+
+							# Check if the game is over after the user's move
+							if game.check_win():
+								done = True
+								reward = game.get_reward()
+								print("O Wins!" if reward == -1.0 else "Draw." if reward == -0.5 else "X Wins!")
+							else:
+								reward = 0  # No reward if the game continues
+
+							# Update the agent using the AI's previous action and the user's response
+							if ai_state is not None and ai_action is not None:
+								agent.update(ai_state, ai_action, reward, next_state, done)
+								total_reward += reward
+
+							# Transition to the next state
+							state = next_state
 
 		agent.decay_epsilon()
+		print(f'Episode {episode}:\t{total_reward=}, {agent.epsilon=:.3f}')
 
-		if episode % 2 == 0:
-			print(f'Episode {episode}:\t{total_reward=}, {agent.epsilon=:.3f}')
-
-	agent.network.save_parameters_to_file()
-	with open('params.txt', 'a') as file:
-		file.write(f'{agent.epsilon},{total_reward}\n')
+	agent.network.save_parameters_to_file('nn_params.txt')
+	with open('params.txt', 'w') as file:
+		file.write(f'{agent.epsilon}')
 
 if __name__ == '__main__':
 	game  = TicTacToeGame()
 	agent = Agent()
-	train_agent(agent, game)
+	train_agent_manually(agent, game, resume=True)
