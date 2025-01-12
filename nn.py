@@ -45,8 +45,8 @@ class NeuralNetwork:
 
 		#? if parameters is not passed to __init__ set them randomly
 		else:
-			self.weights: list[np.ndarray] = [0.2 * np.random.randn(*shape) for shape in self._weights_shapes]
-			self.biases: list[np.ndarray] = [np.zeros(shape=shape) for shape in self._biases_shapes]
+			self.weights: list[np.ndarray] = [0.1 * np.random.randn(*shape) for shape in self._weights_shapes]
+			self.biases: list[np.ndarray] = [0.05 * np.random.randn(*shape) for shape in self._biases_shapes]
 
 			# sets self.parameters, based on weights and biases
 			self.recompute_parameters()
@@ -374,7 +374,8 @@ class NeuralNetwork:
 			constant_lr: bool = False,
 			decay_rate: float = 0.1,
 			number_of_epochs: int = 80,
-			batch_size: int = 32
+			batch_size: int = 32,
+			verbose: bool = False
 	) -> None:
 		"""Trains the model with the labeled training data"""
 
@@ -421,7 +422,8 @@ class NeuralNetwork:
 				self._update_parameters(dw, db, learning_rate=lr)
 
 			cost = 	self.cost_of_test_data(x_train, y_train)
-			print(f'epoch {epoch+1}:\tcost = {cost:.4f}')
+			if verbose:
+				print(f'epoch {epoch+1}:\tcost = {cost:.4f}')
 
 
 	@staticmethod

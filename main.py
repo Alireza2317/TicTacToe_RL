@@ -26,22 +26,25 @@ AI_MARK = 'x'
 FPS: float = 20
 
 class TicTacToeGame:
-	def __init__(self) -> None:
-		pg.init()
-		self.screen = pg.display.set_mode((W, H))
-		self.screen.fill(color=BG_COLOR)
+	def __init__(self, render_enabled: bool = True) -> None:
+		self.render_enabled = render_enabled
 
-		pg.display.set_caption('Tic Tac Toe')
+		if self.render_enabled:
+			pg.init()
+			self.screen = pg.display.set_mode((W, H))
+			self.screen.fill(color=BG_COLOR)
 
-		self.clock = pg.time.Clock()
-		self.font = pg.font.Font(pg.font.get_default_font(), FONT_SIZE)
+			pg.display.set_caption('Tic Tac Toe')
 
-		self.game_surface = pg.Surface(size=(W, H))
-		self.game_surface.fill(color=BG_COLOR)
+			self.clock = pg.time.Clock()
+			self.font = pg.font.Font(pg.font.get_default_font(), FONT_SIZE)
 
-		self.text_surface = self.game_surface.subsurface((0, HEIGHT, WIDTH, H-HEIGHT))
+			self.game_surface = pg.Surface(size=(W, H))
+			self.game_surface.fill(color=BG_COLOR)
 
-		self.draw_grid()
+			self.text_surface = self.game_surface.subsurface((0, HEIGHT, WIDTH, H-HEIGHT))
+
+			self.draw_grid()
 
 		self.reset()
 
@@ -189,7 +192,10 @@ class TicTacToeGame:
 			case 'o':
 				return -1.0
 			case 'draw':
-				return -0.5
+				return -0.2
+
+	def switch_turns(self) -> None:
+		self.turn = 'o' if self.turn == 'x' else 'x'
 
 	def step(self, action: int) -> tuple[list[int], float, bool]:
 		"""
@@ -199,18 +205,16 @@ class TicTacToeGame:
 		"""
 
 		if self.turn == AI_MARK:
+			# since the agent never chooses an invalid action
+			# there is no need to check action's valididity
 			coordinate = divmod(action, 3)
-			# invalid move
-			if coordinate in self.squares:
-				print('INVALID MOVE!')
-				return self.get_state(), -10, True
-			
-			# valid moves
-			self.squares.update({coordinate: AI_MARK})
-			self.turn = 'o' if self.turn == 'x' else 'x'
-
 		
-		self.render()
+			# update the board
+			self.squares.update({coordinate: AI_MARK})
+			
+		if self.render_enabled:
+			self.render()
+		self.switch_turns()
 
 		if (status := self.check_win()):
 			match status:
@@ -225,7 +229,8 @@ class TicTacToeGame:
 			state = self.get_state()
 
 			self.reset()
-			self.render()
+			if self.render_enabled:
+				self.render()
 			
 			return state, reward, True
 
@@ -251,15 +256,15 @@ class Agent:
 		# 0: empty cells, 1: my mark, -1: opponent's mark
 		# 9 outputs representing Q(s, a) for each cell in the board
 		self.network = NeuralNetwork(
-			layers_structure=[9, 32, 32, 9],
+			layers_structure=[9, 32, 9],
 			activations='relu'
 		)
 
 		# discount factor
-		self.gamma: float = 1
+		self.gamma: float = 0.95
 
 		# learning rate
-		self.alpha: float = 0.01
+		self.alpha: float = 0.001
 
 		# epsilon-greedy policy for explore-exploit trade-off
 		# should decay over training to lower the exploration
@@ -286,8 +291,7 @@ class Agent:
 		"""
 			decay epsilon over time to minimize exploration
 		"""
-		if self.epsilon >= 0.12:
-			self.epsilon = self.epsilon * 0.99
+		self.epsilon = max(0.1, self.epsilon * 0.995)
 
 	def update(
 			self,
@@ -326,87 +330,146 @@ class Agent:
 			learning_rate=self.alpha,
 			constant_lr=True,
 			batch_size=1,
-			number_of_epochs=5
+			number_of_epochs=3, 
+			verbose=False
 		)
 
 
-def train_agent_manually(agent: Agent, game: TicTacToeGame, resume: bool = False, episodes=50) -> None:
+def train_agent_manually(agent: Agent, game: TicTacToeGame, resume: bool = False, episodes=2000) -> None:
 	if resume:
-		agent.network.load_params_from_file('nn_params.txt')
-		with open('params.txt', 'r') as file:
-			eps = float(file.read().strip())
-			agent.epsilon = eps
-		
+		try:
+			with open('params.txt', 'r') as file:
+				eps = float(file.read().strip())
+				agent.epsilon = eps
+			
+			agent.network.load_params_from_file('nn_params.txt')
+		except FileNotFoundError:
+			print('No trained file was found, training from scratch!')
+				
 	total_reward: float = 0
 	for episode in range(1, episodes + 1):
+		print(f'Episode {episode}:\t{total_reward=:.1f}, {agent.epsilon=:.3f}')
+		
 		game.reset()
 		state: list[int] = game.get_state()
 		done: bool = False
 
-		# Variables to track the AI's state and action
-		ai_state = None
-		ai_action = None
-
+		# this loop will run while the game is running
 		while not done:
 			if game.turn == AI_MARK:
-				# Store the AI's state and action
-				ai_state = state
+				# choose an action based on the current state
 				ai_action = agent.choose_action(state=state)
 
-				# Step the game with the AI's move
+				# step the game with the AI's move
 				next_state, reward, done = game.step(ai_action)
 
-				# Update the agent immediately after the AI's move
-				agent.update(ai_state, ai_action, reward, next_state, done)
-				total_reward += reward
-
-				# Transition to the next state
-				state = next_state
+				# should always update after the human's response
+				# unless the ai's move, terminates the game
+				if done:
+					agent.update(state, ai_action, reward, next_state, done)
+					total_reward += reward
 			else:
-				# Handle user's input
+				# handle user's input
 				for event in pg.event.get():
 					if event.type == pg.QUIT:
 						pg.quit()
 						sys.exit()
 
 					if event.type == pg.MOUSEBUTTONDOWN:
-						position: tuple[int, int] = game.get_user_input()
+						position: tuple[int, int] = game.get_click_coordinate()
 
-						# A valid move
-						if position not in game.squares:
-							# Update the board
-							game.squares.update({position: game.turn})
+						# ignore invalid moves
+						if position in game.squares:
+							break
+						
+						# valid moves here
+						
+						# update the board
+						game.squares.update({position: game.turn})
+						
+						next_state, reward, done = game.step(action=-1)			
 
-							# Switch the turn
-							game.turn = 'x' if game.turn == 'o' else 'o'
-
-							# Get the new state after the user's move
-							next_state = game.get_state()
-
-							# Check if the game is over after the user's move
-							if game.check_win():
-								done = True
-								reward = game.get_reward()
-								print("O Wins!" if reward == -1.0 else "Draw." if reward == -0.5 else "X Wins!")
-							else:
-								reward = 0  # No reward if the game continues
-
-							# Update the agent using the AI's previous action and the user's response
-							if ai_state is not None and ai_action is not None:
-								agent.update(ai_state, ai_action, reward, next_state, done)
-								total_reward += reward
-
-							# Transition to the next state
-							state = next_state
+						# update the agent based on the human's response
+						agent.update(state, ai_action, reward, next_state, done)
+						total_reward += reward
+			
+			# transition to the next state
+			state = next_state
 
 		agent.decay_epsilon()
-		print(f'Episode {episode}:\t{total_reward=}, {agent.epsilon=:.3f}')
 
 	agent.network.save_parameters_to_file('nn_params.txt')
 	with open('params.txt', 'w') as file:
 		file.write(f'{agent.epsilon}')
 
+
+
+def train_agent_randomly(agent: Agent, game: TicTacToeGame, resume: bool = False, episodes=20000) -> None:
+	if resume:
+		try:
+			with open('params.txt', 'r') as file:
+				eps = float(file.read().strip())
+				agent.epsilon = eps
+			
+			agent.network.load_params_from_file('nn_params.txt')
+		except FileNotFoundError:
+			print('No trained file was found, training from scratch!')
+				
+	total_reward: float = 0
+	for episode in range(1, episodes + 1):
+		if episode%10 == 0:
+			print(f'Episode {episode}:\t{total_reward=:.1f}, {agent.epsilon=:.3f}')
+		
+		game.reset()
+		state: list[int] = game.get_state()
+		done: bool = False
+
+		# this loop will run while the game is running
+		while not done:
+			if game.turn == AI_MARK:
+				# choose an action based on the current state
+				ai_action = agent.choose_action(state=state)
+
+				# step the game with the AI's move
+				next_state, reward, done = game.step(ai_action)
+
+				# should always update after the human's response
+				# unless the ai's move, terminates the game
+				if done:
+					agent.update(state, ai_action, reward, next_state, done)
+					total_reward += reward
+			else:
+				# choose a valid random move
+				# if the state[i] == 0, then the cell is empty and is a valid move
+				valid_actions = [i for i in range(9) if state[i] == 0]
+		
+				# pick a random move
+				opponent_action = choice(valid_actions)
+				position: tuple[int, int] = divmod(opponent_action, 3)
+
+				# update the board
+				game.squares.update({position: game.turn})
+				
+				next_state, reward, done = game.step(action=-1)			
+
+				# update the agent based on the human's response
+				agent.update(state, ai_action, reward, next_state, done)
+				total_reward += reward
+	
+			# transition to the next state
+			state = next_state
+
+		agent.decay_epsilon()
+
+	agent.network.save_parameters_to_file('nn_params.txt')
+	with open('params.txt', 'w') as file:
+		file.write(f'{agent.epsilon}')
+
+
+
+
 if __name__ == '__main__':
-	game  = TicTacToeGame()
+	game  = TicTacToeGame(render_enabled=False)
 	agent = Agent()
-	train_agent_manually(agent, game, resume=True)
+	#train_agent_manually(agent, game, resume=True)
+	train_agent_randomly(agent, game, resume=False)
