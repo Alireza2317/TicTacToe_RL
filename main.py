@@ -471,6 +471,44 @@ def train_agent_randomly(resume: bool = False, episodes=1000) -> None:
 		file.write(f'{agent.epsilon}')
 
 
+def play_with_ai():
+	game = TicTacToeGame()
+	agent = Agent()
+	
+	# no exploration
+	agent.epsilon = 0
+	agent.network.load_params_from_file('nn_params.txt')
+
+	game_over = False
+
+	while not game_over:
+		if game.turn == AI_MARK:
+			state = game.get_state()
+			action = agent.choose_action(state)
+			_, _, game_over = game.step(action=action)
+
+		else:
+			for event in pg.event.get():
+				if event.type == pg.QUIT:
+					pg.quit()
+					sys.exit()
+				
+				if event.type == pg.MOUSEBUTTONDOWN:
+					coordinate = game.get_click_coordinate()
+					
+					if coordinate in game.squares:
+						break
+
+					game.squares.update({coordinate: game.turn})
+					game.switch_turns()
+					
+					action = -1
+
+		_, _, game_over = game.step(action=action)
+	
+
+
 if __name__ == '__main__':
-	train_agent_manually(resume=False)
+	#train_agent_manually(resume=False)
 	#train_agent_randomly(resume=False)
+	play_with_ai()
