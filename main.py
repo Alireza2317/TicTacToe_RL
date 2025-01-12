@@ -500,11 +500,7 @@ def play_with_ai():
 						break
 
 					game.squares.update({coordinate: game.turn})
-					game.switch_turns()
-					
-					action = -1
-
-		_, _, game_over = game.step(action=action)
+					_, _, game_over = game.step(action=-1)
 	
 
 
