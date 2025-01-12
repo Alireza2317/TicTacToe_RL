@@ -256,15 +256,15 @@ class Agent:
 		# 0: empty cells, 1: my mark, -1: opponent's mark
 		# 9 outputs representing Q(s, a) for each cell in the board
 		self.network = NeuralNetwork(
-			layers_structure=[9, 32, 9],
-			activations='relu'
+			layers_structure=[9, 40, 9],
+			activations='tanh'
 		)
 
 		# discount factor
-		self.gamma: float = 0.95
+		self.gamma: float = 0.9
 
 		# learning rate
-		self.alpha: float = 0.001
+		self.alpha: float = 0.002
 
 		# epsilon-greedy policy for explore-exploit trade-off
 		# should decay over training to lower the exploration
@@ -335,7 +335,7 @@ class Agent:
 		)
 
 
-def train_agent_manually(resume: bool = False, episodes=2000) -> None:
+def train_agent_manually(resume: bool = False, episodes=20) -> None:
 	agent = Agent()
 	game = TicTacToeGame(render_enabled=True)
 
@@ -406,7 +406,7 @@ def train_agent_manually(resume: bool = False, episodes=2000) -> None:
 		file.write(f'{agent.epsilon}')
 
 
-def train_agent_randomly(resume: bool = False, episodes=10000) -> None:
+def train_agent_randomly(resume: bool = False, episodes=1000) -> None:
 	agent = Agent()
 	game = TicTacToeGame(render_enabled=False)
 	
@@ -471,9 +471,6 @@ def train_agent_randomly(resume: bool = False, episodes=10000) -> None:
 		file.write(f'{agent.epsilon}')
 
 
-
-
-
 if __name__ == '__main__':
-	#train_agent_manually(resume=True)
-	train_agent_randomly(resume=False)
+	train_agent_manually(resume=False)
+	#train_agent_randomly(resume=False)
