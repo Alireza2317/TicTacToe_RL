@@ -330,12 +330,15 @@ class Agent:
 			learning_rate=self.alpha,
 			constant_lr=True,
 			batch_size=1,
-			number_of_epochs=3, 
+			number_of_epochs=5, 
 			verbose=False
 		)
 
 
-def train_agent_manually(agent: Agent, game: TicTacToeGame, resume: bool = False, episodes=2000) -> None:
+def train_agent_manually(resume: bool = False, episodes=2000) -> None:
+	agent = Agent()
+	game = TicTacToeGame(render_enabled=True)
+
 	if resume:
 		try:
 			with open('params.txt', 'r') as file:
@@ -403,8 +406,10 @@ def train_agent_manually(agent: Agent, game: TicTacToeGame, resume: bool = False
 		file.write(f'{agent.epsilon}')
 
 
-
-def train_agent_randomly(agent: Agent, game: TicTacToeGame, resume: bool = False, episodes=20000) -> None:
+def train_agent_randomly(resume: bool = False, episodes=10000) -> None:
+	agent = Agent()
+	game = TicTacToeGame(render_enabled=False)
+	
 	if resume:
 		try:
 			with open('params.txt', 'r') as file:
@@ -468,8 +473,7 @@ def train_agent_randomly(agent: Agent, game: TicTacToeGame, resume: bool = False
 
 
 
+
 if __name__ == '__main__':
-	game  = TicTacToeGame(render_enabled=False)
-	agent = Agent()
-	#train_agent_manually(agent, game, resume=True)
-	train_agent_randomly(agent, game, resume=False)
+	#train_agent_manually(resume=True)
+	train_agent_randomly(resume=False)
