@@ -19,6 +19,8 @@ X_COLOR = '#00d1ff'
 O_COLOR = '#ff6e6e'
 GRID_THICKNESS = 15
 
+PARAMETERS_FILE = 'nn_params.txt'
+
 # the computer is X or state 1
 # the computer will always play the first move
 AI_MARK = 'x'
@@ -208,10 +210,10 @@ class TicTacToeGame:
 			# since the agent never chooses an invalid action
 			# there is no need to check action's valididity
 			coordinate = divmod(action, 3)
-		
+
 			# update the board
 			self.squares.update({coordinate: AI_MARK})
-			
+
 		if self.render_enabled:
 			self.render()
 		self.switch_turns()
@@ -224,14 +226,14 @@ class TicTacToeGame:
 					print('X Wins!')
 				case 'o':
 					print('O Wins!')
-			
+
 			reward = self.get_reward()
 			state = self.get_state()
 
 			self.reset()
 			if self.render_enabled:
 				self.render()
-			
+
 			return state, reward, True
 
 
@@ -250,7 +252,7 @@ class TicTacToeGame:
 		return (row, col)
 
 class Agent:
-	def __init__(self) -> None:
+	def __init__(self, train_mode: bool = False) -> None:
 		# creating the neural network
 		# 9 inputs, the game board
 		# 0: empty cells, 1: my mark, -1: opponent's mark
@@ -268,7 +270,10 @@ class Agent:
 
 		# epsilon-greedy policy for explore-exploit trade-off
 		# should decay over training to lower the exploration
-		self.epsilon: float = 1
+		if train_mode:
+			self.epsilon: float = 1
+		else:
+			self.epsilon: float = 0
 
 	def choose_action(self, state: list[int]) -> int:
 		"""
@@ -276,11 +281,11 @@ class Agent:
 		"""
 		# if the state[i] == 0, then the cell is empty and is a valid move
 		valid_actions = [i for i in range(9) if state[i] == 0]
-		
+
 		# with probability epsilon, pick a random action
 		if random() < self.epsilon:
 			return choice(valid_actions)
-	
+
 		# otherwise pick the action with the highest Q(a, s)
 		else:
 			q_values = self.network.predict_output(state)
@@ -330,13 +335,13 @@ class Agent:
 			learning_rate=self.alpha,
 			constant_lr=True,
 			batch_size=1,
-			number_of_epochs=5, 
+			number_of_epochs=5,
 			verbose=False
 		)
 
 
 def train_agent_manually(resume: bool = False, episodes=20) -> None:
-	agent = Agent()
+	agent = Agent(train_mode=True)
 	game = TicTacToeGame(render_enabled=True)
 
 	if resume:
@@ -344,15 +349,15 @@ def train_agent_manually(resume: bool = False, episodes=20) -> None:
 			with open('params.txt', 'r') as file:
 				eps = float(file.read().strip())
 				agent.epsilon = eps
-			
-			agent.network.load_params_from_file('nn_params.txt')
+
+			agent.network.load_params_from_file(PARAMETERS_FILE)
 		except FileNotFoundError:
 			print('No trained file was found, training from scratch!')
-				
+
 	total_reward: float = 0
 	for episode in range(1, episodes + 1):
 		print(f'Episode {episode}:\t{total_reward=:.1f}, {agent.epsilon=:.3f}')
-		
+
 		game.reset()
 		state: list[int] = game.get_state()
 		done: bool = False
@@ -384,47 +389,47 @@ def train_agent_manually(resume: bool = False, episodes=20) -> None:
 						# ignore invalid moves
 						if position in game.squares:
 							break
-						
+
 						# valid moves here
-						
+
 						# update the board
 						game.squares.update({position: game.turn})
-						
-						next_state, reward, done = game.step(action=-1)			
+
+						next_state, reward, done = game.step(action=-1)
 
 						# update the agent based on the human's response
 						agent.update(state, ai_action, reward, next_state, done)
 						total_reward += reward
-			
+
 			# transition to the next state
 			state = next_state
 
 		agent.decay_epsilon()
 
-	agent.network.save_parameters_to_file('nn_params.txt')
+	agent.network.save_parameters_to_file(PARAMETERS_FILE)
 	with open('params.txt', 'w') as file:
 		file.write(f'{agent.epsilon}')
 
 
 def train_agent_randomly(resume: bool = False, episodes=10) -> None:
-	agent = Agent()
+	agent = Agent(train_mode=True)
 	game = TicTacToeGame(render_enabled=False)
-	
+
 	if resume:
 		try:
 			with open('params.txt', 'r') as file:
 				eps = float(file.read().strip())
 				agent.epsilon = eps
-			
-			agent.network.load_params_from_file('nn_params.txt')
+
+			agent.network.load_params_from_file(PARAMETERS_FILE)
 		except FileNotFoundError:
 			print('No trained file was found, training from scratch!')
-				
+
 	total_reward: float = 0
 	for episode in range(1, episodes + 1):
 		if episode%10 == 0:
 			print(f'Episode {episode}:\t{total_reward=:.1f}, {agent.epsilon=:.3f}')
-		
+
 		game.reset()
 		state: list[int] = game.get_state()
 		done: bool = False
@@ -447,26 +452,26 @@ def train_agent_randomly(resume: bool = False, episodes=10) -> None:
 				# choose a valid random move
 				# if the state[i] == 0, then the cell is empty and is a valid move
 				valid_actions = [i for i in range(9) if state[i] == 0]
-		
+
 				# pick a random move
 				opponent_action = choice(valid_actions)
 				position: tuple[int, int] = divmod(opponent_action, 3)
 
 				# update the board
 				game.squares.update({position: game.turn})
-				
-				next_state, reward, done = game.step(action=-1)			
+
+				next_state, reward, done = game.step(action=-1)
 
 				# update the agent based on the human's response
 				agent.update(state, ai_action, reward, next_state, done)
 				total_reward += reward
-	
+
 			# transition to the next state
 			state = next_state
 
 		agent.decay_epsilon()
 
-	agent.network.save_parameters_to_file('nn_params.txt')
+	agent.network.save_parameters_to_file(PARAMETERS_FILE)
 	with open('params.txt', 'w') as file:
 		file.write(f'{agent.epsilon}')
 
@@ -474,10 +479,10 @@ def train_agent_randomly(resume: bool = False, episodes=10) -> None:
 def play_with_ai():
 	game = TicTacToeGame()
 	agent = Agent()
-	
+
 	# no exploration
 	agent.epsilon = 0
-	agent.network.load_params_from_file('nn_params.txt')
+	agent.network.load_params_from_file(PARAMETERS_FILE)
 
 	game_over = False
 
@@ -492,18 +497,22 @@ def play_with_ai():
 				if event.type == pg.QUIT:
 					pg.quit()
 					sys.exit()
-				
+
 				if event.type == pg.MOUSEBUTTONDOWN:
 					coordinate = game.get_click_coordinate()
-					
+
 					if coordinate in game.squares:
 						break
 
 					game.squares.update({coordinate: game.turn})
 					_, _, game_over = game.step(action=-1)
-	
 
-def test_agent(agent: Agent):
+
+def test_agent():
+	agent = Agent(train_mode=False)
+	agent.network.load_params_from_file(PARAMETERS_FILE)
+
+
 	states = [
 		[1, 0, 0, 1, 0, -1, 0, 0, -1],
 		[-1, -1, 0, 0, 0, 0, 1, 1, 0],
@@ -534,18 +543,18 @@ def test_agent(agent: Agent):
 		6, 8, 2, 8, 7, 8, 6, 8, 8, 6, 6, 3, 2, 3, 8, 1, 5, 2, 5, 2, 3, 6, 4, 5
 	]
 
-	
+
 	states = np.array(states)
 	actions = np.array(actions).reshape((-1, 1))
 
 	NUM_SAMPLES = max(actions.shape)
-	
+
 	corrects = 0
 	for i in range(NUM_SAMPLES):
 		prediction = agent.network.predict_class(states[i].reshape((9, 1)))
 		if prediction == actions[i]:
 			corrects += 1
-	
+
 	print(f'Accuracy = {corrects / NUM_SAMPLES * 100:.2f}%')
 
 
@@ -554,8 +563,4 @@ if __name__ == '__main__':
 	#train_agent_randomly(resume=True)
 	#play_with_ai()
 
-	agent = Agent()
-	agent.epsilon = 0
-	agent.network.load_params_from_file('nn_params.txt')
-
-	test_agent(agent)
+	test_agent()
