@@ -194,7 +194,7 @@ class TicTacToeGame:
 			case 'o':
 				return -1.0
 			case 'draw':
-				return -0.2
+				return -0.05
 
 	def switch_turns(self) -> None:
 		self.turn = 'o' if self.turn == 'x' else 'x'
@@ -261,6 +261,15 @@ class Agent:
 			layers_structure=[9, 40, 9],
 			activations='tanh'
 		)
+
+		self.network.weights = [
+			np.random.uniform(
+				-np.sqrt(6 / (shape[0]+shape[1])),
+				np.sqrt(6 / (shape[0]+shape[1])),
+				size=shape
+			)
+			for shape in self.network._weights_shapes
+		]
 
 		# discount factor
 		self.gamma: float = 0.9
@@ -560,7 +569,7 @@ def test_agent():
 
 if __name__ == '__main__':
 	#train_agent_manually(resume=True)
-	#train_agent_randomly(resume=True)
+	train_agent_randomly(resume=True, episodes=5000)
 	#play_with_ai()
 
 	test_agent()
