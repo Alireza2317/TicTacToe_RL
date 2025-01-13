@@ -406,7 +406,7 @@ def train_agent_manually(resume: bool = False, episodes=20) -> None:
 		file.write(f'{agent.epsilon}')
 
 
-def train_agent_randomly(resume: bool = False, episodes=1000) -> None:
+def train_agent_randomly(resume: bool = False, episodes=10) -> None:
 	agent = Agent()
 	game = TicTacToeGame(render_enabled=False)
 	
@@ -503,8 +503,59 @@ def play_with_ai():
 					_, _, game_over = game.step(action=-1)
 	
 
+def test_agent(agent: Agent):
+	states = [
+		[1, 0, 0, 1, 0, -1, 0, 0, -1],
+		[-1, -1, 0, 0, 0, 0, 1, 1, 0],
+		[0, 0, 0, -1, -1, 1, 1, -1, 1],
+		[-1, 0, 0, 1, -1, 0, 1, 0, 0],
+		[0, 1, -1, 0, 1, 0, -1, 0, 0],
+		[1, -1, -1, -1, 1, 0, 1, 0, 0],
+		[1, -1, -1, 0, 0, -1, 0, 1, 1],
+		[1, 0, 0, 1, 0, 0, -1, -1, 0],
+		[-1, 0, 1, 0, -1, 1, 0, 0, 0],
+		[0, 0, 1, 0, 1, -1, 0, 0, -1],
+		[0, 1, -1, 0, -1, 1, 0, 0, 0],
+		[1, 0, 0, 0, -1, -1, 0, 0, 1],
+		[1, 1, 0, 0, 0, 0, 0, -1, -1],
+		[-1, 0, 0, 0, 1, 1, -1, 0, 0],
+		[0, 0, -1, 1, 1, -1, 0, 0, 0],
+		[1, 0, 1, -1, -1, 0, 0, 0, 0],
+		[0, -1, 0, 1, 1, 0, 0, -1, 0],
+		[-1, 0, 1, 0, 1, 0, 1, 0, -1],
+		[0, 1, 0, -1, -1, 0, 0, 1, 0],
+		[1, 0, 0, 0, -1, 0, -1, 1, 0],
+		[0, 0, 0, 0, -1, -1, 1, 0, 1],
+		[-1, 1, 0, -1, 0, 0, 0, 1, 0],
+		[1, 0, -1, -1, 0, 0, -1, 1, 1],
+		[-1, 0, -1, 1, 1, 0, 0, 0, 0]
+	]
+	actions = [
+		6, 8, 2, 8, 7, 8, 6, 8, 8, 6, 6, 3, 2, 3, 8, 1, 5, 2, 5, 2, 3, 6, 4, 5
+	]
+
+	
+	states = np.array(states)
+	actions = np.array(actions).reshape((-1, 1))
+
+	NUM_SAMPLES = max(actions.shape)
+	
+	corrects = 0
+	for i in range(NUM_SAMPLES):
+		prediction = agent.network.predict_class(states[i].reshape((9, 1)))
+		if prediction == actions[i]:
+			corrects += 1
+	
+	print(f'Accuracy = {corrects / NUM_SAMPLES * 100:.2f}%')
+
 
 if __name__ == '__main__':
-	#train_agent_manually(resume=False)
-	#train_agent_randomly(resume=False)
-	play_with_ai()
+	#train_agent_manually(resume=True)
+	#train_agent_randomly(resume=True)
+	#play_with_ai()
+
+	agent = Agent()
+	agent.epsilon = 0
+	agent.network.load_params_from_file('nn_params.txt')
+
+	test_agent(agent)
